@@ -1,3 +1,10 @@
+# [2.38.0-beta.1](https://github.com/chadbyte/clay/compare/v2.37.0...v2.38.0-beta.1) (2026-05-07)
+
+
+### Features
+
+* **clay:** introduce Clay host agent and split Home into Clay chat + widgets ([d6081ae](https://github.com/chadbyte/clay/commit/d6081ae504a4a6cb60f075d56a9205a79ba95ebb))
+
 # [2.37.0](https://github.com/chadbyte/clay/compare/v2.36.1...v2.37.0) (2026-05-07)
 
 
