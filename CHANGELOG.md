@@ -1,3 +1,10 @@
+# [2.38.0-beta.4](https://github.com/chadbyte/clay/compare/v2.38.0-beta.3...v2.38.0-beta.4) (2026-05-07)
+
+
+### Features
+
+* **clay:** turn home chat into a persistent FAB-popover ([a55b246](https://github.com/chadbyte/clay/commit/a55b246e342f2f4b12d304d79d77e73a901c43d4)), closes [#clay-fab](https://github.com/chadbyte/clay/issues/clay-fab) [#clay-popover](https://github.com/chadbyte/clay/issues/clay-popover) [#home-hub](https://github.com/chadbyte/clay/issues/home-hub)
+
 # [2.38.0-beta.3](https://github.com/chadbyte/clay/compare/v2.38.0-beta.2...v2.38.0-beta.3) (2026-05-07)
 
 
