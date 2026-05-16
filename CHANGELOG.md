@@ -1,3 +1,10 @@
+# [2.38.0-beta.7](https://github.com/chadbyte/clay/compare/v2.38.0-beta.6...v2.38.0-beta.7) (2026-05-16)
+
+
+### Bug Fixes
+
+* **ask-user:** keep question text with the answer so the model recognizes it ([e6fd603](https://github.com/chadbyte/clay/commit/e6fd6035440ef2e76849bb8248eaaf787034a671))
+
 # [2.38.0-beta.6](https://github.com/chadbyte/clay/compare/v2.38.0-beta.5...v2.38.0-beta.6) (2026-05-08)
 
 
