@@ -1019,6 +1019,21 @@
   transition: background 0.15s, color 0.15s, opacity 0.15s;
 }
 
+/* --- kind badges (sprint orchestrator etc.) --- */
+.session-kind-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.session-kind-icon svg {
+  width: 12px;
+  height: 12px;
+}
+.session-kind-sprint {
+  color: var(--accent, #4a90e2);
+}
+
 .session-tab-bar {
   display: flex;
   gap: 2px;

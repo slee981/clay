@@ -1,95 +1,164 @@
-# Sub-task Sprint Orchestration: $ARGUMENTS
+# Sprint Orchestration: $ARGUMENTS
 
-You are orchestrating work on JIRA parent issue **$ARGUMENTS** and its
-sub-tasks. The user wants a phased plan they can execute one phase at
-a time, with Clay sessions spawned per sub-task in each phase.
+You are orchestrating a phased plan over a set of JIRA issues. The
+user wants a dependency tree, a phased ordering, and Clay sessions
+spawned for each phase one phase at a time.
 
-This skill is invoked **once per phase**. On first run it builds the
-plan and starts Phase 1. On every subsequent invocation it inspects
-JIRA for current status, decides which phase to run next, and spawns
-the Clay sessions for it.
+This skill is invoked **once per phase**. On first run it figures out
+the input mode, builds the plan, and starts Phase 1. On every
+subsequent invocation it re-inspects JIRA for current status, decides
+which phase to run next, and spawns the Clay sessions for it.
 
----
+## Step 0: Decode the Input Mode
+
+`$ARGUMENTS` can be either:
+
+- **Parent-issue mode**: a single JIRA issue key like `GP-221`.
+  Orchestrates the parent issue's direct sub-tasks. Detected when
+  `$ARGUMENTS` matches `<PROJECT>-<number>` (e.g. `GP-221`,
+  `HARD-509`).
+
+- **Fix-version mode**: `<PROJECT>/<VERSION>` — a JIRA project key
+  and a fix-version name separated by a slash, e.g. `GP/2.0` or
+  `HARD/release-15`. Orchestrates every issue in that project with
+  that `fixVersion`. Detected when `$ARGUMENTS` contains a `/`.
+
+If the input doesn't match either shape, stop and ask the user to
+clarify (don't guess).
 
 ## Step 1: Discover Atlassian Site
 
 Call `mcp__atlassian__getAccessibleAtlassianResources` to get the cloud
 ID. Cache it for the rest of this skill. Fail loudly if this errors.
 
-## Step 2: Fetch Parent Issue
+## Step 2: Fetch the Scope
 
-Call `mcp__atlassian__getJiraIssue` with the cloud ID, issue key
-`$ARGUMENTS`, and `responseContentFormat: "markdown"`. Capture the
-parent's summary, type, and current status.
+**Parent-issue mode:** Call `mcp__atlassian__getJiraIssue` with the
+cloud ID, issue key `$ARGUMENTS`, and
+`responseContentFormat: "markdown"`. Capture the parent's summary,
+type, and current status. If the parent is not found, stop and ask
+the user to verify the key.
 
-If the parent is not found, stop and ask the user to verify the key.
+**Fix-version mode:** Split `$ARGUMENTS` on `/` into `PROJECT` and
+`VERSION`. Call `mcp__atlassian__searchJiraIssuesUsingJql` with a
+small probe query (`project = "<PROJECT>" AND fixVersion =
+"<VERSION>"` with `maxResults: 1`) to confirm the project and version
+exist and return at least one issue. If the probe returns zero, stop
+and ask the user to verify either the project key or the version name
+(the version may not exist or may be misspelled). Capture the project
+name and version name for use in later headers.
 
-## Step 3: Fetch Sub-tasks
+### Step 2.5: Mark this Session as the Sprint Dispatcher
 
-Call `mcp__atlassian__searchJiraIssuesUsingJql` with a JQL like:
+Call the Clay MCP tool `rename_session` (exposed as `rename_session`
+in GUI sessions, or `clay-sessions__rename_session` via the
+`clay-tools` bridge in TUI sessions) on the current session.
+
+**Parent-issue mode** title:
+```
+title = "$ARGUMENTS - <short parent summary>"
+kind  = "sprint"
+```
+
+**Fix-version mode** title:
+```
+title = "<PROJECT> v<VERSION> sprint"
+kind  = "sprint"
+```
+
+Truncate so the full title stays under ~80 characters. The
+`kind: "sprint"` tag tells Clay's sidebar to render a small
+branching-tree icon next to the title so the user can spot the
+dispatcher session at a glance among many spawned sub-task sessions.
+
+Skip silently if the rename tool isn't available (running outside
+Clay) — the rest of the skill still works without it.
+
+## Step 3: Fetch the Issue Set
+
+**Parent-issue mode:** call `mcp__atlassian__searchJiraIssuesUsingJql`
+with:
 
 ```
 parent = "$ARGUMENTS" ORDER BY rank ASC
 ```
 
-For each result, capture: key, summary, current status, assignee (if
-any), and the issue's links (call
-`mcp__atlassian__getJiraIssue` per sub-task if the JQL response
-doesn't include link types — needed for dependency detection in
-Step 5).
-
-If the JQL returns zero sub-tasks, stop and tell the user: parent
-issue has no sub-tasks, this skill has nothing to orchestrate.
-
-**Include sub-tasks regardless of status** (To Do, In Progress, Done,
-Blocked, etc.) — the user explicitly wants visibility into all of
-them, not just the open ones. Status drives phase advancement; you
-will skip already-Done sub-tasks when spawning sessions.
-
-## Step 4: Display the Sub-task Inventory
-
-Print a compact table of every sub-task so the user can see what
-they're starting from:
+**Fix-version mode:** call `mcp__atlassian__searchJiraIssuesUsingJql`
+with:
 
 ```
-## Sub-tasks of $ARGUMENTS — <parent summary>
+project = "<PROJECT>" AND fixVersion = "<VERSION>" ORDER BY rank ASC
+```
 
-| Key      | Status        | Summary                          |
-|----------|---------------|----------------------------------|
-| GP-222   | Done          | Setup auth scaffolding           |
-| GP-223   | In Progress   | Add database schema              |
-| GP-224   | To Do         | Create test fixtures             |
-| ...      | ...           | ...                              |
+In both modes, for each result capture: key, summary, current status,
+assignee (if any), issue type, and the issue's links (call
+`mcp__atlassian__getJiraIssue` per issue if the JQL response doesn't
+include link types — needed for dependency detection in Step 5).
+
+If the JQL returns zero issues, stop with a helpful message:
+- Parent mode: "parent issue has no sub-tasks, nothing to orchestrate."
+- Fix-version mode: "no issues found with that fixVersion in
+  <PROJECT> — verify the project key and version name."
+
+**Include items regardless of status** (To Do, In Progress, Done,
+Blocked, etc.) — the user explicitly wants visibility into all of
+them, not just the open ones. Status drives phase advancement; you
+will skip already-Done items when spawning sessions.
+
+## Step 4: Display the Inventory
+
+Print a compact table of every item so the user can see what they're
+starting from:
+
+**Parent-issue mode** header:
+```
+## Sub-tasks of $ARGUMENTS — <parent summary>
+```
+
+**Fix-version mode** header:
+```
+## Issues in <PROJECT> fixVersion <VERSION>
+```
+
+Then the same table layout in both modes:
+
+```
+| Key      | Type    | Status        | Summary                       |
+|----------|---------|---------------|-------------------------------|
+| GP-222   | Story   | Done          | Setup auth scaffolding        |
+| GP-223   | Task    | In Progress   | Add database schema           |
+| GP-224   | Bug     | To Do         | Fix login redirect            |
+| ...      | ...     | ...           | ...                           |
 ```
 
 ## Step 5: Identify Dependencies
 
-For each sub-task, derive its blockers from:
+For each item, derive its blockers from:
 
 1. **JIRA issue links** — the most authoritative source. Look for
    link types "Blocks", "Is Blocked By", "Depends On", "Has To Be
    Done After". Treat "Is Blocked By GP-X" as "depends on GP-X".
 2. **Description and acceptance-criteria text** — natural-language
    references like "After GP-X is done…" or "Requires GP-Y".
-3. **Type-driven defaults** — UI sub-tasks tend to depend on API
-   sub-tasks of the same epic; integration tests tend to depend on
-   all feature work. Apply this only when no explicit link exists
-   and call it out as inferred.
+3. **Type-driven defaults** — UI items tend to depend on API items
+   of the same epic; integration tests tend to depend on all feature
+   work. Apply this only when no explicit link exists and call it
+   out as inferred.
 
 Be explicit when a dependency is inferred vs. declared in JIRA.
 
 ## Step 6: Build Phases
 
-Topologically sort sub-tasks into phases:
+Topologically sort items into phases:
 
-- **Phase 1**: sub-tasks with no dependencies (or whose dependencies
-  are already Done).
-- **Phase N>1**: sub-tasks whose dependencies are all satisfied by
-  earlier phases or by sub-tasks already Done in JIRA.
+- **Phase 1**: items with no dependencies (or whose dependencies are
+  already Done).
+- **Phase N>1**: items whose dependencies are all satisfied by
+  earlier phases or by items already Done in JIRA.
 
-Within a phase, sub-tasks run in parallel (the user fans them out
-into separate Clay sessions). So a phase should be the *maximal* set
-of sub-tasks that have no unsatisfied dependencies — don't artificially
+Within a phase, items run in parallel (the user fans them out into
+separate Clay sessions). So a phase should be the *maximal* set of
+items that have no unsatisfied dependencies — don't artificially
 split them.
 
 If a cycle is detected in the dependency graph, stop and report it.
@@ -98,10 +167,13 @@ Cycles need human intervention.
 ## Step 7: Render the Dependency Tree
 
 Show the phased plan as a markdown tree, marking each item with its
-JIRA status:
+JIRA status. Root label varies by mode:
+
+- Parent-issue mode: `<KEY> — <parent summary>`
+- Fix-version mode: `<PROJECT> fixVersion <VERSION>`
 
 ```
-$ARGUMENTS — <parent summary>
+GP-221 — Auth refresh epic
 │
 ├── Phase 1 — independent setup
 │   ├── ✓ GP-222 — Setup auth scaffolding         [Done]
@@ -121,25 +193,24 @@ Legend: `✓` Done, `◐` In Progress, `○` To Do, `⚠` Blocked.
 ## Step 8: Decide Which Phase to Run
 
 Walk the phases in order and find the **first phase that has at
-least one sub-task not yet Done**. That's the target phase.
+least one item not yet Done**. That's the target phase.
 
-- If every phase is fully Done, congratulate the user — the parent
-  is complete. Stop without spawning anything.
+- If every phase is fully Done, congratulate the user — the scope is
+  complete. Stop without spawning anything.
 - If a target phase exists, tell the user which phase it is, list
-  the sub-tasks in that phase, and **wait for explicit approval
-  before spawning Clay sessions**.
+  the items in that phase, and **wait for explicit approval before
+  spawning Clay sessions**.
 
 The user might say "skip GP-225 for now" or "only spawn GP-224 from
 this phase" — respect their override.
 
 ## Step 9: Spawn Clay Sessions for the Target Phase
 
-For each sub-task in the approved phase that is **not already Done**:
+For each item in the approved phase that is **not already Done**:
 
 Call `spawn_session` (from `clay-sessions` MCP — exposed as
 `mcp__clay-tools__clay-sessions__spawn_session` via the bridge in TUI
-sessions). One call per sub-task, in **parallel** in a single agent
-turn.
+sessions). One call per item, in **parallel** in a single agent turn.
 
 Arguments per call:
 
@@ -153,11 +224,11 @@ Arguments per call:
   produces a plan before touching code).
 - `effort`: omit (defaults to `"high"`).
 
-Sub-tasks that are already **In Progress** should also be spawned —
-the user explicitly said they want to continue them. The `/jira`
-skill inside that session will pick up where the prior work left off.
+Items that are already **In Progress** should also be spawned — the
+user explicitly said they want to continue them. The `/jira` skill
+inside that session will pick up where the prior work left off.
 
-Sub-tasks already **Done** should NOT be spawned — skip them and note
+Items already **Done** should NOT be spawned — skip them and note
 why in the summary.
 
 ## Step 10: Summarise and Hand Off
@@ -165,9 +236,9 @@ why in the summary.
 In a short final message, tell the user:
 
 - Which phase you started (e.g. "Phase 2 of 3").
-- Which sub-tasks were spawned, with their Clay session localIds
-  (from the `spawn_session` tracking lines).
-- Which sub-tasks were skipped and why ("GP-222 already Done").
+- Which items were spawned, with their Clay session localIds (from
+  the `spawn_session` tracking lines).
+- Which items were skipped and why ("GP-222 already Done").
 - How to advance: "Re-run `/sprint $ARGUMENTS` once you're done with
   this phase and I'll detect completion in JIRA and launch the next
   one."
@@ -182,17 +253,17 @@ to advance.
 
 - **JIRA is the source of truth for phase advancement** — don't rely
   on Clay's done flag for orchestration decisions. Always re-fetch
-  sub-task status from JIRA at Step 3 on every invocation.
-- **One phase per invocation** — never spawn sub-tasks from a later
+  item status from JIRA at Step 3 on every invocation.
+- **One phase per invocation** — never spawn items from a later
   phase before the current phase is Done in JIRA. The user explicitly
-  wants phased execution, not "all sub-tasks at once".
+  wants phased execution, not "everything at once".
 - **Approval gate before each phase launch** — Step 8's "wait for
   approval" is non-negotiable. The user may want to override
-  ordering, skip a sub-task, or pause.
+  ordering, skip an item, or pause.
 - **Parallel spawn within a phase** — call `spawn_session` once per
-  sub-task in a single turn so the sessions appear together in the
+  item in a single turn so the sessions appear together in the
   sidebar instead of trickling in.
-- **Skip Done sub-tasks** — never spawn a session for a sub-task that
+- **Skip Done items** — never spawn a session for an item that
   JIRA already shows as Done. The user wants resumption, not
   duplication.
 - **Inferred dependencies are flagged** — when you derive a
