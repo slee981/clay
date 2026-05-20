@@ -1019,6 +1019,56 @@
   transition: background 0.15s, color 0.15s, opacity 0.15s;
 }
 
+.session-tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: 6px 0 4px;
+  border-bottom: 1px solid var(--border);
+}
+.session-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: background 0.12s, color 0.12s, opacity 0.12s;
+}
+.session-tab:hover {
+  background: var(--surface-sunken, rgba(0, 0, 0, 0.04));
+  opacity: 1;
+}
+.session-tab.active {
+  background: var(--surface-elevated, rgba(0, 0, 0, 0.08));
+  color: var(--text);
+  opacity: 1;
+}
+.session-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--surface-sunken, rgba(0, 0, 0, 0.08));
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.session-tab.active .session-tab-count {
+  background: var(--accent, #4a90e2);
+  color: #fff;
+}
+
 .session-top-action .lucide,
 .session-top-action svg {
   width: 14px;
