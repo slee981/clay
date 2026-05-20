@@ -74,9 +74,11 @@ Plan a sprint in one chat, then turn the result into per-ticket sessions in a si
 
 Clay spawns one session per work item in parallel, each titled with the issue key and pre-running your `/jira <KEY>` (or any other discovery skill). The sidebar fills with `GP-222`, `GP-232`, … each one a separate xterm or chat tab you can pick up later. Sessions launch in plan mode at high effort by default, so each one loads context and produces a plan before touching code — you walk back into ready-to-review proposals.
 
-When you finish a ticket, `/done` from inside that session flips the JIRA status and prefixes the Clay sidebar entry with `done - `, so progress is visible at a glance.
+When you finish a ticket, `/done` from inside that session transitions the JIRA ticket and flips the session's structural `done` flag — Clay moves it from the **Active** tab to the **Completed** tab in the sidebar automatically.
 
-Two MCP tools drive this — `spawn_session` (fan-out) and `mark_session_done` (close-out). Both work from GUI and TUI Claude sessions, because Clay's in-app MCP servers are bridged into the real `claude` CLI via `--mcp-config`. So the planning conversation can be a TUI session (subscription billing) and still command the rest of your workspace.
+Three MCP tools drive this — `spawn_session` (fan-out), `rename_session` (refine the title once context is loaded), and `mark_session_done` (close-out). All three work from GUI and TUI Claude sessions, because Clay's in-app MCP servers are bridged into the real `claude` CLI via `--mcp-config`. So the planning conversation can be a TUI session (subscription billing) and still command the rest of your workspace.
+
+Ready-to-use `/jira` and `/done` slash commands ship in [`skills/`](skills/) — drop them into `~/.claude/commands/` to get the full workflow on your machine.
 
 ### Ralph Loop: autonomous coding while you sleep
 
