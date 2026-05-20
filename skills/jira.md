@@ -132,6 +132,15 @@ After the user approves:
    If no suitable transition exists, report available transitions and let the
    user decide.
 
+3. **Mark the Clay session done**: Call the `mark_session_done` tool from
+   the `clay-sessions` MCP server (exposed as `mark_session_done` in GUI
+   sessions, or `clay-sessions__mark_session_done` via the `clay-tools`
+   bridge in TUI sessions). Pass no arguments — it operates on the
+   calling session. The tool flips the session's structural `done` flag
+   so Clay moves it from the **Active** tab to the **Completed** tab in
+   the sidebar. Skip silently if the tool isn't available (running
+   outside Clay).
+
 ---
 
 ## Rules
