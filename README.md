@@ -34,7 +34,7 @@ npx clay-server
 - **Your virtual team.** Mates with names, memory, and roles — architect, reviewer, designer, whoever you need. They learn your codebase, push back on bad ideas, and don't reset between sessions.
 - **A multi-project dashboard.** Every repo on your machine in one sidebar. Run agents across several in parallel; permission requests and completions surface as notifications.
 - **A self-hosted dev server.** Runs on your machine in plain JSONL and Markdown. No proprietary database, no cloud relay, no lock-in. Walk away whenever — your data walks with you.
-- **A work-automation system.** Ralph Loop iterates a feature overnight; cron schedules agents while you're away. Wake up to results, or a clean failure trace.
+- **A work-automation system.** Ralph Loop iterates a feature overnight; cron schedules agents while you're away. Spawn one session per JIRA ticket in a single prompt and let each one plan in parallel. Wake up to results, or a clean failure trace.
 
 ## What it does
 
@@ -65,6 +65,18 @@ Stuck on REST vs GraphQL? Monorepo or split? Surface the question to a debate. P
 ### Parallel worktrees
 
 Detect existing git worktrees, spin up new ones from the sidebar, and run agents in each one independently. No more "wait, I have uncommitted changes." Each worktree is an isolated session with its own history.
+
+### Session fan-out: one prompt, many sessions
+
+Plan a sprint in one chat, then turn the result into per-ticket sessions in a single sentence:
+
+> *"Let's work on GP-222 and GP-232 in clay please"*
+
+Clay spawns one session per work item in parallel, each titled with the issue key and pre-running your `/jira <KEY>` (or any other discovery skill). The sidebar fills with `GP-222`, `GP-232`, … each one a separate xterm or chat tab you can pick up later. Sessions launch in plan mode at high effort by default, so each one loads context and produces a plan before touching code — you walk back into ready-to-review proposals.
+
+When you finish a ticket, `/done` from inside that session flips the JIRA status and prefixes the Clay sidebar entry with `done - `, so progress is visible at a glance.
+
+Two MCP tools drive this — `spawn_session` (fan-out) and `mark_session_done` (close-out). Both work from GUI and TUI Claude sessions, because Clay's in-app MCP servers are bridged into the real `claude` CLI via `--mcp-config`. So the planning conversation can be a TUI session (subscription billing) and still command the rest of your workspace.
 
 ### Ralph Loop: autonomous coding while you sleep
 
@@ -153,7 +165,7 @@ No. Share one org-wide key, or let each user bring their own. On Linux with OS-l
 On Linux, opt in and Clay provisions each user as a real Linux account. File ACLs are enforced via `setfacl`, agent processes spawn under the user's UID/GID, and the kernel handles the rest. One teammate can't read another's project files, even by accident. The guarantee comes from the OS, not from a promise in our code.
 
 **"Does it work with MCP servers?"**
-Yes. User-configured MCPs from `~/.clay/mcp.json` plus built-in browser, email, ask-user, and debate servers. All work in both Claude and Codex sessions.
+Yes. User-configured MCPs from `~/.clay/mcp.json` plus built-in browser, email, ask-user, debate, and sessions (spawn / mark-done) servers. All work in Claude (GUI and TUI) and Codex sessions — TUI Claude sessions reach Clay's in-app servers through a stdio bridge launched via `--mcp-config`.
 
 **"Can I use it on my phone?"**
 Yes. Install as a PWA on iOS or Android. Push notifications for approvals, errors, and task completion.
@@ -193,7 +205,7 @@ graph LR
       Server["HTTP / WS Server"]
       Project["Project Context"]
       YOKE["YOKE Adapter Layer"]
-      MCP["Built-in MCP servers<br/>ask-user / browser /<br/>debate / email"]
+      MCP["Built-in MCP servers<br/>ask-user / browser / debate /<br/>email / sessions"]
       Push["Push (VAPID)"]
     end
 
