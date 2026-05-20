@@ -1079,9 +1079,12 @@
   font-weight: 600;
   color: var(--text-muted);
 }
+/* Active tab: accent-tinted chip + accent text. Avoids the
+ * low-contrast white-on-warm-accent rendering of an accent-filled
+ * chip. */
 .session-tab.active .session-tab-count {
-  background: var(--accent, #4a90e2);
-  color: #fff;
+  background: var(--accent-bg, rgba(255, 184, 108, 0.18));
+  color: var(--accent, #ffb86c);
 }
 
 .session-top-action .lucide,
