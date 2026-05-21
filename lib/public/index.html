@@ -694,6 +694,15 @@
                 </div>
                 <div id="ps-emoji-picker-anchor"></div>
               </div>
+              <div class="settings-field">
+                <label class="settings-label" for="ps-label-input">Label</label>
+                <div class="settings-hint">Short text shown in the icon strip when no emoji icon is set. Max 6 characters. Leave blank to use the auto-generated abbreviation.</div>
+                <div class="ps-icon-row">
+                  <input type="text" class="ps-text-input" id="ps-label-input" maxlength="6" autocomplete="off" spellcheck="false" placeholder="e.g. DP">
+                  <button class="settings-btn-sm" id="ps-label-save">Save</button>
+                  <button class="settings-btn-sm settings-btn-ghost hidden" id="ps-label-clear">Clear</button>
+                </div>
+              </div>
               <div class="settings-field" id="ps-owner-field" style="display:none">
                 <label class="settings-label">Owner</label>
                 <div class="settings-hint">The user whose Claude account is used for all sessions in this project.</div>
