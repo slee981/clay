@@ -15,9 +15,11 @@ and tell the user to install Playwright MCP:
 
 The browser opens a window the user can watch. You analyse the
 accessibility snapshot (`browser_snapshot`) for structured DOM
-content, and only take screenshots (`browser_take_screenshot`) when a
-visual is genuinely needed — snapshots are cheaper and more reliable
-for reasoning about controls.
+content for reasoning about controls — but **always also take a
+screenshot** (`browser_take_screenshot`) of every page you visit so
+the user has a visual record to review alongside your commentary.
+The snapshot tells you *what* is on the page; the screenshot is what
+the user looks at to judge it.
 
 ---
 
@@ -88,8 +90,10 @@ on that URL — suggest they confirm it's started, or override with
 
 ## Step 3: Initial Landing-page Read
 
-Call `browser_snapshot` to get the accessibility tree. Summarise
-**out loud** for the user in chat:
+Call `browser_snapshot` to get the accessibility tree **and**
+`browser_take_screenshot` to capture the landing page visually.
+Surface the screenshot in chat so the user can see what you're
+looking at. Then summarise **out loud** for the user in chat:
 
 - The page title and top-level heading
 - The primary navigation items (link text + where they go, when the
@@ -112,11 +116,11 @@ For each page or section the user wants to inspect:
 
 1. Navigate there (`browser_navigate`, `browser_click`,
    `browser_type` as needed). Wait for it to settle.
-2. Read the page (`browser_snapshot`). For pages that are heavily
-   visual (charts, layout-sensitive panels), additionally take a
-   screenshot (`browser_take_screenshot`) so you can comment on
-   visual issues the snapshot doesn't reveal (spacing, colours,
-   alignment).
+2. Read the page (`browser_snapshot`) **and** take a screenshot
+   (`browser_take_screenshot`) every time. Surface the screenshot
+   in chat so the user has a visual to review alongside your
+   commentary. The snapshot is for your reasoning; the screenshot
+   is what the user judges the page from.
 3. Describe what's there briefly. Call out anything that looks
    off: console errors, broken images, accessibility issues
    (missing labels, low-contrast labels in the snapshot), obvious
@@ -214,10 +218,12 @@ this walkthrough session.
 - **Browser MCP only** — never use `bash` to `curl` the local URL
   as a substitute for `browser_navigate`. The walkthrough is
   visual; the user is watching the browser window.
-- **Snapshot before screenshot** — `browser_snapshot` gives you
-  structured semantic content. Screenshots cost more tokens and
-  are less precise; only use them when a visual issue (layout,
-  colour, spacing) needs them.
+- **Always screenshot every page** — `browser_snapshot` gives you
+  structured semantic content for reasoning, but every page the
+  user visits during the walkthrough should also be captured with
+  `browser_take_screenshot` and surfaced in chat. The user is
+  reviewing the UI; they need to see it, not just read your
+  description of it.
 - **No URL guessing without a probe** — when auto-detecting,
   don't just pick a port from convention. Verify with a quick
   HTTP probe that something is actually responding there before
