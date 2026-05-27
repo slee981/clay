@@ -1,0 +1,28 @@
+/* tui-keybar.css
+ *
+ * Container for the TUI keybar overlay rendered by `tui-keybar-overlay.js`.
+ * The button styling (`.term-key`, `.term-key-toggle`, `.term-key-arrow`,
+ * `.term-key-spacer`) is defined class-only in filebrowser.css and reused
+ * by both the bottom-panel shell toolbar (#terminal-toolbar) and this
+ * overlay.
+ *
+ * z-index 250 sits above #mobile-tab-bar (z-index 200 in mobile-nav.css)
+ * defensively, in case the .keyboard-hidden toggle fails.
+ */
+
+#tui-keybar-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(20, 20, 20, 0.95);
+  border-top: 1px solid #333;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
