@@ -874,6 +874,22 @@
   bottom: -1px;
 }
 
+/* Fixed-width leading status slot. Holds either the processing dot or
+   the needs-attention bell so the title text never shifts when those
+   indicators toggle on/off. Width matches the dot+margin combo so the
+   visual rhythm matches what was there before, just reserved. */
+.session-status-slot {
+  display: inline-block;
+  width: 14px;
+  margin-right: 4px;
+  vertical-align: middle;
+  text-align: center;
+  flex-shrink: 0;
+}
+.session-status-slot:empty {
+  /* Empty slot still occupies space — keep width but no visual. */
+}
+
 .session-item .session-processing,
 .mate-session-item .session-processing {
   display: inline-block;
@@ -881,7 +897,6 @@
   height: 6px;
   border-radius: 50%;
   background: var(--success);
-  margin-right: 8px;
   vertical-align: middle;
 }
 
@@ -1039,7 +1054,7 @@
 .session-attention-icon {
   display: inline-flex;
   align-items: center;
-  margin-right: 4px;
+  justify-content: center;
   vertical-align: middle;
   color: var(--accent, #ffb86c);
   animation: clayAttentionPulse 1.6s ease-in-out infinite;
@@ -1060,6 +1075,92 @@
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.55; transform: scale(0.92); }
 }
+
+/* --- user-chosen session colors (right-click → Set color) ---
+   Applied as a left-border accent + faint background tint so the
+   session row reads as colored without losing legibility. The
+   needs-attention border takes precedence (it overrides this) since
+   that's a more urgent signal. */
+.session-item[class*="session-color-"] {
+  border-left: 3px solid var(--session-color, transparent);
+  padding-left: 9px;
+}
+.session-item[class*="session-color-"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--session-color, transparent);
+  opacity: 0.08;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.session-item { position: relative; }
+.session-item.session-color-red    { --session-color: #ef4444; }
+.session-item.session-color-orange { --session-color: #f97316; }
+.session-item.session-color-yellow { --session-color: #eab308; }
+.session-item.session-color-green  { --session-color: #22c55e; }
+.session-item.session-color-blue   { --session-color: #3b82f6; }
+.session-item.session-color-purple { --session-color: #a855f7; }
+.session-item.session-color-pink   { --session-color: #ec4899; }
+.session-item.session-color-gray   { --session-color: #6b7280; }
+/* needs-attention still wins — re-apply its border so the accent
+   shows through even when a color is set. */
+.session-item.needs-attention[class*="session-color-"] {
+  border-left-color: var(--accent, #ffb86c);
+}
+
+/* --- color picker row inside session context menu --- */
+.session-ctx-color-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+}
+.session-ctx-color-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+.session-ctx-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.session-ctx-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--overlay-rgb), 0.2);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.session-ctx-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px rgba(var(--overlay-rgb), 0.15);
+}
+.session-ctx-swatch.is-selected {
+  box-shadow: 0 0 0 2px var(--accent, #ffb86c);
+}
+.session-ctx-swatch-red    { background: #ef4444; }
+.session-ctx-swatch-orange { background: #f97316; }
+.session-ctx-swatch-yellow { background: #eab308; }
+.session-ctx-swatch-green  { background: #22c55e; }
+.session-ctx-swatch-blue   { background: #3b82f6; }
+.session-ctx-swatch-purple { background: #a855f7; }
+.session-ctx-swatch-pink   { background: #ec4899; }
+.session-ctx-swatch-gray   { background: #6b7280; }
+.session-ctx-swatch-clear {
+  background: transparent;
+  color: var(--fg, #444);
+}
+.session-ctx-swatch-clear svg { width: 12px; height: 12px; }
 
 .session-tab-bar {
   display: flex;

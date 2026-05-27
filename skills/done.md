@@ -27,10 +27,23 @@ to confirm which issue to mark done. Do not guess.
 4. Call `mcp__atlassian__transitionJiraIssue` with the matched
    transition ID.
 
-If the issue is already in a done-shaped status, skip the transition
-and note this in the final summary instead of erroring out.
+If the issue is already in a done-shaped status, treat that as
+**JIRA succeeded** for the purposes of Step 3 — note it in the final
+summary, then proceed to mark Clay done.
+
+If the transition fails for any other reason (no matching transition
+exists, the JIRA API errors, the cloud ID lookup fails, the issue
+key is wrong), **stop here**. Do NOT proceed to Step 3. Report the
+JIRA failure to the user and ask how they want to handle it (manual
+JIRA update, different key, or override). The Clay session must not
+be flipped to done while JIRA is still showing it as open — having
+the two diverge is exactly what this gate exists to prevent.
 
 ## Step 3: Mark the Clay Session as Done
+
+**Only run this step if Step 2 succeeded** (or the issue was already
+in a done-shaped status). If JIRA could not be updated, skip this
+step entirely.
 
 Call the `mark_session_done` tool from the `clay-sessions` MCP server
 (exposed as `mark_session_done` in GUI sessions, or
@@ -56,3 +69,17 @@ In ONE short sentence, tell the user:
 Do NOT switch the user to a different session, do NOT keep working on
 the issue, do NOT propose follow-up work unless they ask. The user is
 done with this one.
+
+---
+
+## Rules
+
+- **JIRA-first, then Clay** — never flip the Clay session's `done`
+  flag if the JIRA transition failed. The two states must agree;
+  Clay-done while JIRA-open is the bug this skill exists to avoid.
+  Treat "already done in JIRA" as success — only a real API failure
+  (or missing key) blocks Clay from being marked done.
+- **Same rule applies to GitHub** — if the user's "done" workflow
+  involves closing a PR or issue on GitHub (some projects use that
+  in place of JIRA), the same gate applies: don't mark the Clay
+  session done unless the GitHub close also succeeded.

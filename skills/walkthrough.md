@@ -15,9 +15,42 @@ and tell the user to install Playwright MCP:
 
 The browser opens a window the user can watch. You analyse the
 accessibility snapshot (`browser_snapshot`) for structured DOM
-content, and only take screenshots (`browser_take_screenshot`) when a
-visual is genuinely needed — snapshots are cheaper and more reliable
-for reasoning about controls.
+content for reasoning about controls — but **always also take a
+screenshot** (`browser_take_screenshot`) of every page you visit so
+the user has a visual record to review alongside your commentary.
+The snapshot tells you *what* is on the page; the screenshot is what
+the user looks at to judge it.
+
+### Where screenshots go
+
+Save every screenshot into `<cwd>/.playwright-mcp/` (relative to the
+working directory — this is the Playwright MCP default and gets
+gitignored). Pass an explicit `filename` to `browser_take_screenshot`
+so each file is identifiable later:
+
+```
+filename = "<KEY>-<page-slug>-<NN>.png"
+```
+
+- `<KEY>` — the relevant JIRA issue key in **uppercase**:
+  - If a JIRA ticket was just filed for this page (Step 5b), use
+    that key (e.g. `GP-247`).
+  - If the walkthrough is being driven against a specific issue the
+    user mentioned at the start, use that key for every screenshot.
+  - Otherwise use the literal string `WALK` as a placeholder until
+    a ticket is filed; if the screenshot then becomes attached to
+    a newly-filed ticket, rename or take a fresh shot with the real
+    key so the artifact is traceable.
+- `<page-slug>` — short kebab-case identifier for the page or panel
+  (e.g. `dispatch`, `settings-account`, `inventory-table`).
+- `<NN>` — zero-padded sequence number if you take more than one
+  shot of the same page in the same session (`01`, `02`, …).
+
+Examples: `.playwright-mcp/GP-247-dispatch-01.png`,
+`.playwright-mcp/WALK-settings-account-01.png`.
+
+If `.playwright-mcp/` doesn't exist yet, the MCP server creates it on
+first write — you don't need to mkdir.
 
 ---
 
@@ -88,8 +121,12 @@ on that URL — suggest they confirm it's started, or override with
 
 ## Step 3: Initial Landing-page Read
 
-Call `browser_snapshot` to get the accessibility tree. Summarise
-**out loud** for the user in chat:
+Call `browser_snapshot` to get the accessibility tree **and**
+`browser_take_screenshot` to capture the landing page visually.
+Save the screenshot to `.playwright-mcp/<KEY>-landing-01.png` using
+the naming rules above. Surface the file path in chat so the user
+can see what you're looking at. Then summarise **out loud** for the
+user in chat:
 
 - The page title and top-level heading
 - The primary navigation items (link text + where they go, when the
@@ -112,11 +149,13 @@ For each page or section the user wants to inspect:
 
 1. Navigate there (`browser_navigate`, `browser_click`,
    `browser_type` as needed). Wait for it to settle.
-2. Read the page (`browser_snapshot`). For pages that are heavily
-   visual (charts, layout-sensitive panels), additionally take a
-   screenshot (`browser_take_screenshot`) so you can comment on
-   visual issues the snapshot doesn't reveal (spacing, colours,
-   alignment).
+2. Read the page (`browser_snapshot`) **and** take a screenshot
+   (`browser_take_screenshot`) every time, saving to
+   `.playwright-mcp/<KEY>-<page-slug>-<NN>.png` (see the naming
+   rules at the top of this skill). Surface the file path in chat
+   so the user has a visual to review alongside your commentary.
+   The snapshot is for your reasoning; the screenshot is what the
+   user judges the page from.
 3. Describe what's there briefly. Call out anything that looks
    off: console errors, broken images, accessibility issues
    (missing labels, low-contrast labels in the snapshot), obvious
@@ -214,10 +253,18 @@ this walkthrough session.
 - **Browser MCP only** — never use `bash` to `curl` the local URL
   as a substitute for `browser_navigate`. The walkthrough is
   visual; the user is watching the browser window.
-- **Snapshot before screenshot** — `browser_snapshot` gives you
-  structured semantic content. Screenshots cost more tokens and
-  are less precise; only use them when a visual issue (layout,
-  colour, spacing) needs them.
+- **Always screenshot every page** — `browser_snapshot` gives you
+  structured semantic content for reasoning, but every page the
+  user visits during the walkthrough should also be captured with
+  `browser_take_screenshot` and surfaced in chat. The user is
+  reviewing the UI; they need to see it, not just read your
+  description of it.
+- **Screenshots land in `.playwright-mcp/`** — relative to the cwd,
+  with the JIRA key prefixed in the filename
+  (`<KEY>-<page-slug>-<NN>.png`). Use `WALK` as the key prefix only
+  until a real ticket is filed; once a ticket exists for the page,
+  the screenshot for that page must use that key so the artifact is
+  traceable back to JIRA.
 - **No URL guessing without a probe** — when auto-detecting,
   don't just pick a port from convention. Verify with a quick
   HTTP probe that something is actually responding there before

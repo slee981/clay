@@ -196,7 +196,17 @@ Walk the phases in order and find the **first phase that has at
 least one item not yet Done**. That's the target phase.
 
 - If every phase is fully Done, congratulate the user — the scope is
-  complete. Stop without spawning anything.
+  complete. In parent-issue mode, also attempt to transition the
+  parent issue itself to Done (`mcp__atlassian__getTransitionsForJiraIssue`
+  → match "Done"/"Closed"/"Resolved" → `transitionJiraIssue`). Only
+  after that transition succeeds (or the parent is already Done) may
+  you call `mark_session_done` on this dispatcher session. If the
+  parent-close transition fails, report the failure and leave the
+  dispatcher session **active** so the user can resolve it manually
+  — never mark the sprint done while JIRA still shows the parent as
+  open. In fix-version mode there's no parent issue to gate on, so
+  marking the dispatcher session done is the user's call (don't do
+  it automatically). Stop without spawning anything.
 - If a target phase exists, tell the user which phase it is, list
   the items in that phase, and **wait for explicit approval before
   spawning Clay sessions**.
@@ -303,6 +313,14 @@ to advance.
 - **Skip Done items** — never spawn a session for an item that
   JIRA already shows as Done. The user wants resumption, not
   duplication.
+- **Don't mark the dispatcher done unless JIRA agrees** — in
+  parent-issue mode, the sprint dispatcher session may only be
+  marked done after the parent JIRA issue itself has been
+  transitioned to Done (or was already Done). If the parent-close
+  transition fails, leave the dispatcher session active and tell
+  the user. Clay-done while JIRA-open is the divergence this gate
+  prevents. Same rule for GitHub-as-tracker projects: don't mark
+  the dispatcher done unless the GitHub close succeeded.
 - **Inferred dependencies are flagged** — when you derive a
   dependency from description text or type heuristics rather than a
   JIRA link, mark it `(inferred)` in the tree so the user can

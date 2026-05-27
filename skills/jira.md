@@ -171,15 +171,20 @@ After the user has confirmed us-test:
    to discover available transitions. Find the best match for the final status
    (match "Done", "Closed", "Resolved", "Complete" -- pick the closest).
    Call `mcp__atlassian__transitionJiraIssue` with the matched transition ID.
-   If no suitable transition exists, report available transitions and let the
-   user decide.
+   If no suitable transition exists, or the transition call errors out,
+   **stop here** — report the failure and ask the user how they want to
+   handle it. Do NOT proceed to step 3. The Clay session must not be
+   marked done while JIRA still shows the issue as open.
 
-3. **Mark the Clay session done**: Call the `mark_session_done` tool from
-   the `clay-sessions` MCP server (exposed as `mark_session_done` in GUI
-   sessions, or `clay-sessions__mark_session_done` via the `clay-tools`
-   bridge in TUI sessions). Pass no arguments — it operates on the
-   calling session. The tool flips the session's structural `done` flag
-   so Clay moves it from the **Active** tab to the **Completed** tab in
+3. **Mark the Clay session done** — only if step 2 succeeded (or the
+   issue was already in a done-shaped status before this step). If
+   JIRA could not be transitioned, skip this step entirely. Call the
+   `mark_session_done` tool from the `clay-sessions` MCP server
+   (exposed as `mark_session_done` in GUI sessions, or
+   `clay-sessions__mark_session_done` via the `clay-tools` bridge in
+   TUI sessions). Pass no arguments — it operates on the calling
+   session. The tool flips the session's structural `done` flag so
+   Clay moves it from the **Active** tab to the **Completed** tab in
    the sidebar. Skip silently if the tool isn't available (running
    outside Clay).
 
@@ -207,9 +212,17 @@ After the user has confirmed us-test:
   it.
 - **Dynamic discovery**: Always discover cloud ID and transition IDs at runtime.
   Never hardcode them.
-- **Error resilience**: If a JIRA API call fails (comment, transition), report
-  the error but continue with development work. JIRA updates are secondary to
-  the code changes.
+- **Error resilience**: If a JIRA API call fails during *development*
+  steps (comment, in-progress transition), report the error but
+  continue with development work. JIRA updates during the work itself
+  are secondary to the code changes. **Exception**: the final
+  done-transition in Step 8 is a hard gate — if that fails, do NOT
+  mark the Clay session done. The two systems must agree on
+  completion; Clay-done while JIRA-open is the bug this rule prevents.
+- **GitHub-as-tracker projects**: if a project uses GitHub Issues or
+  PR-close in place of JIRA for completion, the same hard gate
+  applies — don't `mark_session_done` unless the GitHub close also
+  succeeded.
 - **Selective staging**: When committing, add specific files by name.
 - **Project conventions**: Always defer to the project's CLAUDE.md for commit
   message format, coding style, and other conventions.
