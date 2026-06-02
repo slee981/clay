@@ -1070,6 +1070,20 @@
             </label>
           </div>
           <div class="settings-card">
+            <div class="settings-field">
+              <label class="settings-label" for="us-tui-scrollback">TUI scrollback size</label>
+              <div class="settings-hint">How much terminal history a Claude TUI session keeps so you can scroll back to read earlier responses — especially useful on mobile. Larger values use more memory and make re-attaching slower. Lowering it trims running sessions immediately; raising it retains more from now on.</div>
+              <select id="us-tui-scrollback" class="settings-select">
+                <option value="25">25 KB</option>
+                <option value="50">50 KB (default)</option>
+                <option value="100">100 KB</option>
+                <option value="250">250 KB</option>
+                <option value="500">500 KB</option>
+                <option value="1000">1 MB</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-card">
             <label class="settings-toggle-row">
               <div>
                 <span class="settings-label">Show Codex</span>
